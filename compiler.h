@@ -1,6 +1,5 @@
 #ifndef DIUCCOMPILER_H
 #define DIUCCOMPILER_H
-
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -11,6 +10,18 @@ struct position
     int col;
     const char* filename;
 };
+
+#define NUMERIC_CASE \
+    case '0':       \
+    case '1':       \
+    case '2':       \
+    case '3':       \
+    case '4':       \
+    case '5':       \
+    case '6':       \
+    case '7':       \
+    case '8':       \
+    case '9'
 
 enum
 {
@@ -34,7 +45,7 @@ struct token
 {
     int type;
     int flags;
-
+    struct position position;
     union
     {
         char cval;
@@ -45,18 +56,19 @@ struct token
         void* any;
     };
 
-    // true if their is whitespace between the token and the next token
+    // True if their is whitespace between the token and the next token
+    // i.e * a for operator token * would mean whitespace would be set for token "a"
     bool whitespace;
 
-    //(61+19)
+    // (5+10+20)
     const char* between_brackets;
 
 };
 
 struct lex_process;
-typedef char(*LEX_PROCESS_NEXT_CHAR)(struct lex_process* process);
-typedef char(*LEX_PROCESS_PEEK_CHAR)(struct lex_process* process);
-typedef void(*LEX_PROCESS_PUSH_CHAR)(struct lex_process* process, char c);
+typedef char (*LEX_PROCESS_NEXT_CHAR)(struct lex_process* process);
+typedef char (*LEX_PROCESS_PEEK_CHAR)(struct lex_process* process);
+typedef void (*LEX_PROCESS_PUSH_CHAR)(struct lex_process* process, char c);
 
 struct lex_process_functions
 {
@@ -71,15 +83,16 @@ struct lex_process
     struct vector* token_vec;
     struct compile_process* compiler;
 
-    /*
-    * ((61))
-    */
+    /**
+     *
+     * ((50))
+     */
     int current_expression_count;
     struct buffer* parentheses_buffer;
     struct lex_process_functions* function;
 
-    //This will be private data that the lexer does not understand
-    //but the person using the lexer does understand.
+    // This will be private data that the lexer does not understand
+    // but the person using the lexer does understand.
     void* private;
 };
 
@@ -93,6 +106,7 @@ struct compile_process
 {
     // The flags in regards to how this file should be compiled
     int flags;
+
     struct position position;
     struct compile_process_input_file
     {
@@ -105,13 +119,18 @@ struct compile_process
 };
 
 int compile_file(const char* filename, const char* out_filename, int flags);
-struct compile_process* compile_process_create(const char* filename, const char* filename_out, int flags);
+struct compile_process *compile_process_create(const char *filename, const char *filename_out, int flags);
+
 
 char compile_process_next_char(struct lex_process* lex_process);
 char compile_process_peek_char(struct lex_process* lex_process);
 void compile_process_push_char(struct lex_process* lex_process, char c);
 
-struct lex_process* lex_process_create(struct compile_process* compiler, struct lex_process_functions* function, void* private);
+
+void compiler_error(struct compile_process* compiler, const char* msg, ...);
+void compiler_warning(struct compile_process* compiler, const char* msg, ...);
+
+struct lex_process* lex_process_create(struct compile_process* compiler, struct lex_process_functions* functions, void* private);
 void lex_process_free(struct lex_process* process);
 void* lex_process_private(struct lex_process* process);
 struct vector* lex_process_tokens(struct lex_process* process);
