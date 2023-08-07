@@ -143,7 +143,7 @@ static bool is_single_operator(char op)
            op == '?';
 }
 
-bool op_valid(const char *op)
+bool op_valid(const char* op)
 {
     return S_EQ(op, "+") ||
            S_EQ(op, "-") ||
